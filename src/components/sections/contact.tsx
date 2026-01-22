@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { insertContactMessageSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import type { InsertContactMessage } from "@shared/schema";
+import type { InsertContactMessage } from "@/shared/schema";
 
 export default function Contact() {
   const sectionRef = useRef<HTMLElement>(null);
