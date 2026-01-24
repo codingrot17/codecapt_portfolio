@@ -1,23 +1,14 @@
 import { useState, useEffect, createContext, useContext } from "react";
 
-interface AuthContextType {
-    isAuthenticated: boolean;
-    login: (credentials: {
-        username: string;
-        password: string;
-    }) => Promise<boolean>;
-    logout: () => Promise<void>;
-    isLoading: boolean;
-    checkAuth: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext(null);
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
+
     if (!context) {
         throw new Error("useAuth must be used within an AuthProvider");
     }
+
     return context;
 };
 
@@ -38,7 +29,7 @@ export const useAuthProvider = () => {
             }
 
             const data = await res.json();
-            setIsAuthenticated(data.authenticated);
+            setIsAuthenticated(Boolean(data.authenticated));
         } catch (error) {
             console.error("Auth check failed:", error);
             setIsAuthenticated(false);
@@ -51,10 +42,7 @@ export const useAuthProvider = () => {
         checkAuth();
     }, []);
 
-    const login = async (credentials: {
-        username: string;
-        password: string;
-    }): Promise<boolean> => {
+    const login = async credentials => {
         setIsLoading(true);
 
         try {

@@ -8,19 +8,25 @@ import { Mail, Phone, MapPin, Send, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { insertContactMessageSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import type { InsertContactMessage } from "@/shared/schema";
 
 export default function Contact() {
-  const sectionRef = useRef<HTMLElement>(null);
+  const sectionRef = useRef(null);
   const isVisible = useIntersectionObserver(sectionRef, { threshold: 0.1 });
   const { toast } = useToast();
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const form = useForm<InsertContactMessage>({
+  const form = useForm({
     resolver: zodResolver(insertContactMessageSchema),
     defaultValues: {
       name: "",
@@ -31,7 +37,7 @@ export default function Contact() {
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: InsertContactMessage) => {
+    mutationFn: async (data) => {
       const response = await apiRequest("POST", "/api/contact", data);
       return response.json();
     },
@@ -52,7 +58,7 @@ export default function Contact() {
     },
   });
 
-  const onSubmit = (data: InsertContactMessage) => {
+  const onSubmit = (data) => {
     mutation.mutate(data);
   };
 
@@ -81,13 +87,17 @@ export default function Contact() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="glassmorphism rounded-xl p-8"
           >
-            <h3 className="text-2xl font-semibold mb-6 text-blue-400">Send a Message</h3>
-            
+            <h3 className="text-2xl font-semibold mb-6 text-blue-400">
+              Send a Message
+            </h3>
+
             {isSubmitted ? (
               <div className="text-center py-12">
                 <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
                 <h4 className="text-xl font-semibold mb-2">Message Sent!</h4>
-                <p className="text-gray-300">Thank you for your message. I'll get back to you soon.</p>
+                <p className="text-gray-300">
+                  Thank you for your message. I'll get back to you soon.
+                </p>
                 <Button
                   onClick={() => setIsSubmitted(false)}
                   className="mt-4"
@@ -98,7 +108,10 @@ export default function Contact() {
               </div>
             ) : (
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
                   <div className="grid md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -117,7 +130,7 @@ export default function Contact() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="email"
@@ -126,8 +139,8 @@ export default function Contact() {
                           <FormLabel>Email</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="your.email@example.com"
                               type="email"
+                              placeholder="your.email@example.com"
                               {...field}
                               className="bg-primary-800/50 border-gray-600 text-black"
                             />
@@ -164,9 +177,9 @@ export default function Contact() {
                         <FormLabel>Message</FormLabel>
                         <FormControl>
                           <Textarea
+                            {...field}
                             placeholder="Tell me about your project or what you'd like to discuss..."
                             className="bg-primary-800/50 border-gray-600 text-black min-h-32"
-                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -181,7 +194,7 @@ export default function Contact() {
                   >
                     {mutation.isPending ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                         Sending...
                       </>
                     ) : (
@@ -204,7 +217,10 @@ export default function Contact() {
             className="space-y-8"
           >
             <div className="glassmorphism rounded-xl p-8">
-              <h3 className="text-2xl font-semibold mb-6 text-purple-400">Let's Connect</h3>
+              <h3 className="text-2xl font-semibold mb-6 text-purple-400">
+                Let's Connect
+              </h3>
+
               <div className="space-y-6">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
@@ -213,7 +229,9 @@ export default function Contact() {
                   <div>
                     <h4 className="font-semibold">Email</h4>
                     <p className="text-gray-300">codingrot001@gmail.com</p>
-                    <p className="text-gray-300">ademolaemmanuel645@gmail.com</p>
+                    <p className="text-gray-300">
+                      ademolaemmanuel645@gmail.com
+                    </p>
                   </div>
                 </div>
 
@@ -241,14 +259,18 @@ export default function Contact() {
             </div>
 
             <div className="glassmorphism rounded-xl p-8">
-              <h3 className="text-xl font-semibold mb-6">Available for Work</h3>
+              <h3 className="text-xl font-semibold mb-6">
+                Available for Work
+              </h3>
               <p className="text-gray-300 mb-4">
-                I'm currently available for freelance projects and full-time opportunities.
-                Let's create something amazing together!
+                I'm currently available for freelance projects and full-time
+                opportunities. Let's create something amazing together!
               </p>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-green-400 font-semibold">Available Now</span>
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+                <span className="text-green-400 font-semibold">
+                  Available Now
+                </span>
               </div>
             </div>
           </motion.div>
