@@ -14,35 +14,133 @@ export const COLLECTIONS = {
     PROJECTS: "projects",
     BLOG_POSTS: "blog_posts",
     TECH_STACKS: "tech_stacks",
-    CONTACT_MESSAGES: "contact_messages"
+    CONTACT_MESSAGES: "contact_messages",
+    CATEGORIES: "categories" // New collection
+};
+
+// Pagination helper
+const DEFAULT_PAGE_SIZE = 9; // 3x3 grid looks good
+
+// ==================== CATEGORIES ====================
+export const categoryService = {
+    async list(type = null) {
+        try {
+            const queries = [Query.orderAsc("name")];
+
+            // Filter by type if provided (project, blog, tech)
+            if (type) {
+                queries.push(Query.equal("type", type));
+            }
+
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.CATEGORIES,
+                queries
+            );
+            return response.documents;
+        } catch (error) {
+            console.error("Error listing categories:", error);
+            throw error;
+        }
+    },
+
+    async create(data) {
+        try {
+            return await databases.createDocument(
+                DATABASE_ID,
+                COLLECTIONS.CATEGORIES,
+                ID.unique(),
+                {
+                    name: data.name,
+                    slug:
+                        data.slug ||
+                        data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+                    type: data.type, // 'project', 'blog', or 'tech'
+                    description: data.description || ""
+                }
+            );
+        } catch (error) {
+            console.error("Error creating category:", error);
+            throw error;
+        }
+    },
+
+    async delete(id) {
+        try {
+            await databases.deleteDocument(
+                DATABASE_ID,
+                COLLECTIONS.CATEGORIES,
+                id
+            );
+        } catch (error) {
+            console.error("Error deleting category:", error);
+            throw error;
+        }
+    }
 };
 
 // ==================== PROJECTS ====================
 export const projectService = {
-    async list() {
+    async list(options = {}) {
+        const {
+            page = 1,
+            limit = DEFAULT_PAGE_SIZE,
+            category = null,
+            featured = null
+        } = options;
+
         try {
+            const queries = [
+                Query.orderDesc("$createdAt"),
+                Query.limit(limit),
+                Query.offset((page - 1) * limit)
+            ];
+
+            if (category && category !== "all") {
+                queries.push(Query.equal("category", category));
+            }
+
+            if (featured !== null) {
+                queries.push(Query.equal("featured", featured));
+            }
+
             const response = await databases.listDocuments(
                 DATABASE_ID,
                 COLLECTIONS.PROJECTS,
-                [Query.orderDesc("$createdAt")]
+                queries
             );
 
-            // Transform data to match your frontend expectations
-            return response.documents.map(doc => ({
-                ...doc,
-                // Convert comma-separated strings to arrays
-                technologies: doc.technologies
-                    ? doc.technologies.split(",").map(t => t.trim())
-                    : [],
-                features: doc.features
-                    ? doc.features.split(",").map(f => f.trim())
-                    : [],
-                // Ensure URLs have defaults
-                imageUrl: doc.imageUrl || "",
-                liveUrl: doc.liveUrl || "",
-                githubUrl: doc.githubUrl || "",
-                featured: doc.featured || false
-            }));
+            // Get total count for pagination
+            const totalQueries =
+                category && category !== "all"
+                    ? [Query.equal("category", category)]
+                    : [];
+
+            const totalResponse = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.PROJECTS,
+                totalQueries
+            );
+
+            return {
+                documents: response.documents.map(doc => ({
+                    ...doc,
+                    technologies: doc.technologies
+                        ? doc.technologies.split(",").map(t => t.trim())
+                        : [],
+                    features: doc.features
+                        ? doc.features.split(",").map(f => f.trim())
+                        : [],
+                    imageUrl: doc.imageUrl || "",
+                    liveUrl: doc.liveUrl || "",
+                    githubUrl: doc.githubUrl || "",
+                    featured: doc.featured || false
+                })),
+                total: totalResponse.total,
+                page,
+                limit,
+                totalPages: Math.ceil(totalResponse.total / limit)
+            };
         } catch (error) {
             console.error("Error listing projects:", error);
             throw error;
@@ -86,7 +184,6 @@ export const projectService = {
                     title: data.title,
                     description: data.description,
                     category: data.category,
-                    // Convert arrays to comma-separated strings for storage
                     technologies: Array.isArray(data.technologies)
                         ? data.technologies.join(", ")
                         : data.technologies || "",
@@ -109,7 +206,6 @@ export const projectService = {
         try {
             const updateData = { ...data };
 
-            // Convert arrays to strings if present
             if (data.technologies && Array.isArray(data.technologies)) {
                 updateData.technologies = data.technologies.join(", ");
             }
@@ -145,14 +241,53 @@ export const projectService = {
 
 // ==================== BLOG POSTS ====================
 export const blogService = {
-    async list() {
+    async list(options = {}) {
+        const {
+            page = 1,
+            limit = DEFAULT_PAGE_SIZE,
+            category = null,
+            featured = null
+        } = options;
+
         try {
+            const queries = [
+                Query.orderDesc("$createdAt"),
+                Query.limit(limit),
+                Query.offset((page - 1) * limit)
+            ];
+
+            if (category && category !== "all") {
+                queries.push(Query.equal("category", category));
+            }
+
+            if (featured !== null) {
+                queries.push(Query.equal("featured", featured));
+            }
+
             const response = await databases.listDocuments(
                 DATABASE_ID,
                 COLLECTIONS.BLOG_POSTS,
-                [Query.orderDesc("$createdAt")]
+                queries
             );
-            return response.documents;
+
+            const totalQueries =
+                category && category !== "all"
+                    ? [Query.equal("category", category)]
+                    : [];
+
+            const totalResponse = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.BLOG_POSTS,
+                totalQueries
+            );
+
+            return {
+                documents: response.documents,
+                total: totalResponse.total,
+                page,
+                limit,
+                totalPages: Math.ceil(totalResponse.total / limit)
+            };
         } catch (error) {
             console.error("Error listing blog posts:", error);
             throw error;
@@ -226,14 +361,48 @@ export const blogService = {
 
 // ==================== TECH STACKS ====================
 export const techStackService = {
-    async list() {
+    async list(options = {}) {
+        const {
+            page = 1,
+            limit = 100, // Usually show all tech stacks
+            category = null
+        } = options;
+
         try {
+            const queries = [
+                Query.orderAsc("category"),
+                Query.limit(limit),
+                Query.offset((page - 1) * limit)
+            ];
+
+            if (category && category !== "all") {
+                queries.push(Query.equal("category", category));
+            }
+
             const response = await databases.listDocuments(
                 DATABASE_ID,
                 COLLECTIONS.TECH_STACKS,
-                [Query.orderAsc("category")]
+                queries
             );
-            return response.documents;
+
+            const totalQueries =
+                category && category !== "all"
+                    ? [Query.equal("category", category)]
+                    : [];
+
+            const totalResponse = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.TECH_STACKS,
+                totalQueries
+            );
+
+            return {
+                documents: response.documents,
+                total: totalResponse.total,
+                page,
+                limit,
+                totalPages: Math.ceil(totalResponse.total / limit)
+            };
         } catch (error) {
             console.error("Error listing tech stacks:", error);
             throw error;
@@ -261,7 +430,7 @@ export const techStackService = {
                 ID.unique(),
                 {
                     name: data.name,
-                    icon: data.icon || "", // Can be emoji or URL
+                    icon: data.icon || "", // Now expects URL
                     progress: data.progress || 0,
                     category: data.category,
                     color: data.color || "bg-blue-500/20",
@@ -304,14 +473,34 @@ export const techStackService = {
 
 // ==================== CONTACT MESSAGES ====================
 export const contactService = {
-    async list() {
+    async list(options = {}) {
+        const { page = 1, limit = 20 } = options;
+
         try {
+            const queries = [
+                Query.orderDesc("$createdAt"),
+                Query.limit(limit),
+                Query.offset((page - 1) * limit)
+            ];
+
             const response = await databases.listDocuments(
                 DATABASE_ID,
                 COLLECTIONS.CONTACT_MESSAGES,
-                [Query.orderDesc("$createdAt")]
+                queries
             );
-            return response.documents;
+
+            const totalResponse = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.CONTACT_MESSAGES
+            );
+
+            return {
+                documents: response.documents,
+                total: totalResponse.total,
+                page,
+                limit,
+                totalPages: Math.ceil(totalResponse.total / limit)
+            };
         } catch (error) {
             console.error("Error listing contact messages:", error);
             throw error;
